@@ -9,7 +9,7 @@ namespace benchmarks.oneof;
 [RankColumn]
 public class ControlFlowBenchmarks
 {
-    static readonly Random _random = new Random();
+    static readonly Random _random = new();
 
     [Benchmark]
     public bool ExceptionBased()
@@ -23,6 +23,38 @@ public class ControlFlowBenchmarks
             return false;
         }
         return true;
+    }
+
+    [Benchmark]
+    public bool NullableBased()
+    {
+        var result = DoSomethingNullable();
+
+        return result.HasValue;
+    }
+
+    [Benchmark]
+    public bool TupleBased()
+    {
+        var (success, _) = DoSomethingTuple();
+
+        return success;
+    }
+
+    [Benchmark]
+    public bool ObjectBased()
+    {
+        var result = DoSomethingObject();
+
+        return result.IsSuccess;
+    }
+
+    [Benchmark]
+    public bool RecordBased()
+    {
+        var result = DoSomethingRecord();
+
+        return result.IsSuccess;
     }
 
     [Benchmark]
@@ -80,6 +112,50 @@ public class ControlFlowBenchmarks
         return v;
     }
 
+    int? DoSomethingNullable()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return null;
+        }
+        return v;
+    }
+
+    (bool, int) DoSomethingTuple()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return (false, 0);
+        }
+        return (true, v);
+    }
+
+    AnObject DoSomethingObject()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return new AnObject { IsSuccess = false };
+        }
+        return new AnObject { IsSuccess = true, Value = v };
+    }
+
+    ARecord DoSomethingRecord()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return new ARecord(0, false);
+        }
+        return new ARecord(v, true);
+    }
+
     OneOf<int, Failure> DoSomethingOneOf()
     {
         var v = _random.Next(1);
@@ -97,7 +173,7 @@ public class ControlFlowBenchmarks
 
         if (v == 0)
         {
-            return Failure.Default;
+            return Failure.SingleInstance;
         }
         return v;
     }
@@ -119,7 +195,7 @@ public class ControlFlowBenchmarks
 
         if (v == 0)
         {
-            return Failure.Default;
+            return Failure.SingleInstance;
         }
         return v;
     }
@@ -127,8 +203,16 @@ public class ControlFlowBenchmarks
 
 public record Failure()
 {
-    public static readonly Failure Default = new Failure();
+    public static readonly Failure SingleInstance = new();
 }
 
 [GenerateOneOf]
 public partial class ReturnType : OneOfBase<int, Failure> {}
+
+public class AnObject
+{
+    public int Value { get; set; }
+    public bool IsSuccess { get; set; }
+}
+
+public record ARecord(int Value, bool IsSuccess);
