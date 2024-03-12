@@ -100,7 +100,51 @@ public class ControlFlowBenchmarks
             failure => false
         );
     }
+    
+    [Benchmark]
+    public bool ReturnTypePoly()
+    {
+        var result = DoSomethingPoly();
 
+        return result switch {
+            AReturn.AReturnValue _ => true,
+            _ => false
+        };
+    }
+    
+    [Benchmark]
+    public bool ReturnTypePolyStatic()
+    {
+        var result = DoSomethingPolyStatic();
+
+        return result switch {
+            AReturn.AReturnValue _ => true,
+            _ => false
+        };
+    }
+
+    AReturn DoSomethingPolyStatic()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return AReturn.AnError;
+        }
+        return new AReturn.AReturnValue(v);
+    }
+    
+    AReturn DoSomethingPoly()
+    {
+        var v = _random.Next(1);
+
+        if (v == 0)
+        {
+            return new AReturn.AError();
+        }
+        return new AReturn.AReturnValue(v);
+    }
+    
     int DoSomethingExceptional()
     {
         var v = _random.Next(1);
@@ -208,6 +252,14 @@ public record Failure()
 
 [GenerateOneOf]
 public partial class ReturnType : OneOfBase<int, Failure> {}
+
+public record AReturn
+{
+    public static AError AnError = new AError();
+    
+    public record AReturnValue(int Value) : AReturn;
+    public record AError : AReturn;
+}
 
 public class AnObject
 {
